@@ -1,0 +1,9 @@
+# OS Cache files
+.DS_Store
+Thumbs.db
+
+# Editor Temporally File
+*.*~
+*~
+
+test/temp/
