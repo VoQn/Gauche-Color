@@ -26,9 +26,9 @@
 
 ;;; Red Green Blue Model
 (define-class* <rgb> (<color>)
-  ([red   :type <number> :filter (inner$ 0 1)]
-   [green :type <number> :filter (inner$ 0 1)]
-   [blue  :type <number> :filter (inner$ 0 1)]))
+  ([red   :is-a <real> :filter (inner$ 0 1)]
+   [green :is-a <real> :filter (inner$ 0 1)]
+   [blue  :is-a <real> :filter (inner$ 0 1)]))
 
 (define-method getters ((rgb <rgb>)) (list red-of green-of blue-of))
 
@@ -48,12 +48,12 @@
 
 ;;; RGBA (Added Alpha Channel)
 (define-class* <rgba> (<rgb>)
-  ([alpha :type <number> :filter (inner$ 0 1)]))
+  ([alpha :is-a <real> :filter (inner$ 0 1)]))
 
 (define-method getters ((rgba <rgba>))
   (list red-of green-of blue-of alpha-of))
 
-(define-method +bright ((rgba <rgba>) (b <number>))
+(define-method +bright ((rgba <rgba>) (b <real>))
   (let1 a (alpha-of rgba)
     (receive (r g b _) (m-values (pa$ + b) rgba)
       (make <rgba> :red r :green g :blue b :alpha a))))
@@ -64,7 +64,7 @@
       (format "rgba(~a%, ~a%, ~a%, ~a)" r g b a))))
 
 ;; RGB -> RGBA
-(define-method add-alpha ((rgb <rgb>) (a <number>))
+(define-method add-alpha ((rgb <rgb>) (a <real>))
   (receive (r g b) (x->values rgb)
     (make <rgba> :red r :green g :blue b :alpha a)))
 

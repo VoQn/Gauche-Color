@@ -10,6 +10,7 @@ check:
 	@echo "Cleaning log file ..."
 	@rm -f ${record} ${log}
 	@echo "------------------------------------------------------------------------"
+	${test}/util-test.scm		 >> ${log}
 	${test}/model/hcx-test.scm       >> ${log}
 	${test}/model/rgb-test.scm       >> ${log}
 	${test}/model/hsv-test.scm       >> ${log}

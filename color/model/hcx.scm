@@ -9,9 +9,9 @@
 ;;; Hue Chroma X Model
  
 (define-class* <hcx> (<color>)
-  ((hue    :type <number> :filter (loop-mod$ 360))
-   (chroma :type <number> :filter (inner$ 0 1))
-   (x      :type <number> :filter (inner$ 0 1))))
+  ((hue    :is-a <real> :filter (loop-mod$ 360))
+   (chroma :is-a <real> :filter (inner$ 0 1))
+   (x      :is-a <real> :filter (inner$ 0 1))))
 
 (define-method getters ((hcx <hcx>)) (list hue-of chroma-of x-of))
 

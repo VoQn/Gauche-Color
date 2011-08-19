@@ -12,9 +12,9 @@
 
 ;;; HSL Color Model
 (define-class* <hsl> (<color>)
-  ([hue        :type <number> :filter (loop-mod$ 360)]
-   [saturation :type <number> :filter (inner$ 0 1)]
-   [luminance  :type <number> :filter (inner$ 0 1)]))
+  ([hue        :is-a <real> :filter (loop-mod$ 360)]
+   [saturation :is-a <real> :filter (inner$ 0 1)]
+   [luminance  :is-a <real> :filter (inner$ 0 1)]))
 
 (define-method getters ((hsl <hsl>))
   (list hue-of saturation-of luminance-of))
@@ -28,7 +28,7 @@
 
 ;;; HSLA Color Model
 (define-class* <hsla> (<hsl>)
-  ((alpha :type <number> :filter (inner$ 0 1))))
+  ((alpha :is-a <real> :filter (inner$ 0 1))))
 
 (define-method getters ((hsla <hsla>))
   (list hue-of saturation-of luminance-of alpha-of))
@@ -42,7 +42,7 @@
 	    a)))
 
 ;; HSL -> HSLA
-(define-method add-alpha ((hsl <hsl>) (a <number>))
+(define-method add-alpha ((hsl <hsl>) (a <real>))
   (receive (h s l) (x->values hsl)
     (make <hsla> :hue h :saturation s :luminance l :alpha a)))
 
