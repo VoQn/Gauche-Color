@@ -13,6 +13,4 @@
    (chroma :is-a <real> :filter (inner$ 0 1))
    (x      :is-a <real> :filter (inner$ 0 1))))
 
-(define-method getters ((hcx <hcx>)) (list hue-of chroma-of x-of))
-
 (provide "color/model/hcx")

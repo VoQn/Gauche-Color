@@ -30,8 +30,6 @@
    [green :is-a <real> :filter (inner$ 0 1)]
    [blue  :is-a <real> :filter (inner$ 0 1)]))
 
-(define-method getters ((rgb <rgb>)) (list red-of green-of blue-of))
-
 (define-method +bright ((rgb <rgb>) (b <number>))
   (receive (r g b) (m-values (pa$ + b) rgb)
     (make <rgb> :red r :green g :blue b)))
@@ -49,9 +47,6 @@
 ;;; RGBA (Added Alpha Channel)
 (define-class* <rgba> (<rgb>)
   ([alpha :is-a <real> :filter (inner$ 0 1)]))
-
-(define-method getters ((rgba <rgba>))
-  (list red-of green-of blue-of alpha-of))
 
 (define-method +bright ((rgba <rgba>) (b <real>))
   (let1 a (alpha-of rgba)

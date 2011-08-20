@@ -7,6 +7,14 @@
 (use util)
 (test-module 'util)
 
+(test-section "Utility Functions: tolerance")
+(test* "case |x - y| < t" #t
+       ((tolerance 1e-5) (/ 1 3) 0.33333333))
+(test* "case |x - y| = t" #f
+       ((tolerance 1e-5) 0 1e-5))
+(test* "case |x - y| > t" #f
+       ((tolerance 1e-5) 0 1e-4))
+
 (test-section "Utility Functions: loop-mod$")
 (test* "case x < 0"         10 ((loop-mod$ 360) -350) =)
 (test* "case x = 0"          0 ((loop-mod$ 360) 0)    =)
@@ -22,6 +30,28 @@
 (test-section "Utility Functions: x->list")
 (test* "<string>" '(#\t #\e #\s #\t) (x->list "test"))
 (test* "<vector>" '(1 2 3) (x->list '#(1 2 3)))
+
+(test-section "Utility Macro: fif")
+(test* "generate if-syntax : then case"
+       "argument is odd! : 3"
+       ((fif odd?
+	     (^x #`"argument is odd! : ,x")
+	     (^x #`"argument is even! : ,x"))
+	3))
+
+(test* "generate if-syntax : else case"
+       "argument is even! : 4"
+       ((fif odd?
+	     (^x #`"argument is odd! : ,x")
+	     (^x #`"argument is even! : ,x"))
+	4))
+
+(test* "generate if-syntax : without else"
+       (undefined)
+       ((fif odd?
+	     (^x #`"argument is odd! : ,x"))
+	4))
+
 
 (test-section "Utility Macro: define-class*")
 (test* "generating :init-value, :init-keyword, and accessor"
@@ -53,27 +83,38 @@
 		  :setter set!-hoge)))))
 
 (test* "case :read-only, without :setter accessor"
-       '(define-class <test> ()
-	  ((hoge :getter hoge-of
-		 :read-only #t
-		 :init-value 0
+       `(define-class <test> ()
+	  ((hoge :init-value ,(undefined)
 		 :init-keyword :hoge
-		 )))
+		 :getter hoge-of
+		 :read-only #t)))
        (macroexpand-1
 	'(define-class* <test> ()
-	   ((hoge :read-only #t
-		  :init-value 0
-		  :init-keyword :hoge
-		  )))))
+	   ((hoge :read-only #t)))))
+
 (test-section "Type Safe Meta Class")
-(define-class* <test-type-safe> ()
-  ((hoge :is-a <number> :filter (loop-mod$ 360)))
+(define-class <test-type-safe> ()
+  ((hoge :is-a <number>
+	 :init-value 0
+	 :init-keyword :hoge
+	 :filter (loop-mod$ 360)))
   :metaclass <type-safe-meta>)
-(define test-obj (make <test-type-safe> :hoge 0))
+(define test-obj (make <test-type-safe> :hoge 1))
 
 (test* "is slot type safe" <number>
-       (class-of (slot-ref test-obj 'hoge))
-       (^ (e r) (is-a? r e)))
-       
+       (slot-ref test-obj 'hoge)
+       (^ (c v) (is-a? v c)))
+
+(test* "is slot auto filtering" 10
+       (begin (set! (slot-ref test-obj 'hoge) -350)
+	      (slot-ref test-obj 'hoge))
+       =)
+
+;; Test Error Handling
+(set! *test-report-error* #f) 
+(test* "is slot auto type validation"
+       (test-error <error>)
+       (set! (slot-ref test-obj 'hoge) "hoge"))
+
 
 (test-end)

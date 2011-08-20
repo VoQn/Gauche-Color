@@ -12,14 +12,7 @@
    [saturation :is-a <real> :filter (inner$ 0 1)]
    [value      :is-a <real> :filter (inner$ 0 1)]))
 
-(define-method getters ((hsv <hsv>))
-  (list hue-of saturation-of value-of))
-
-(define-class* <hsva> (<hsv>)
-  ([alpha :is-a <real> :filter (inner$ 0 1)]))
-
-(define-method getters ((hsva <hsva>))
-  (list hue-of saturation-of value-of alpha-of))
+(define-class* <hsva> (<hsv>) ([alpha :is-a <real> :filter (inner$ 0 1)]))
 
 ;; Add & Remove Alpha Channel
 (define-method add-alpha ((hsv <hsv>) (a <real>))

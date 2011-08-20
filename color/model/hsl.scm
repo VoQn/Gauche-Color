@@ -16,9 +16,6 @@
    [saturation :is-a <real> :filter (inner$ 0 1)]
    [luminance  :is-a <real> :filter (inner$ 0 1)]))
 
-(define-method getters ((hsl <hsl>))
-  (list hue-of saturation-of luminance-of))
-
 (define-method x->string ((hsl <hsl>))
   (receive (h s l) (x->values hsl)
     (format "hsl(~a, ~a%, ~a%)"
@@ -29,9 +26,6 @@
 ;;; HSLA Color Model
 (define-class* <hsla> (<hsl>)
   ((alpha :is-a <real> :filter (inner$ 0 1))))
-
-(define-method getters ((hsla <hsla>))
-  (list hue-of saturation-of luminance-of alpha-of))
 
 (define-method x->string ((hsla <hsla>))
   (receive (h s l a) (x->values hsla)
