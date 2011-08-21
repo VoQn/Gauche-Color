@@ -15,9 +15,9 @@
 (define-syntax test-list*
   (syntax-rules ()
     [(_ name exp expr)
-     (test* name exp ((fif pair? identity x->list) expr))]
+     (test* name exp ((if$ pair? identity x->list) expr))]
     [(_ name exp expr test)
-     (test* name exp ((fif pair? identity x->list) expr)
+     (test* name exp ((if$ pair? identity x->list) expr)
 	    (pa$ list= test))]))
 
 (provide "test/util")

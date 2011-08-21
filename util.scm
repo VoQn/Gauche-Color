@@ -69,12 +69,12 @@
 		#t))
 	(next-method))))
 
-(define-syntax fif
+(define-syntax if$
   (syntax-rules ()
     [(_ pred true) (^ (x) (if (pred x) (true x)))]
     [(_ pred true false) (^ (x) (if (pred x) (true x) (false x)))]))
 
-(define (tolerance t) (.$ (pa$ > t) abs -))
+(define (tolerance$ t) (.$ (pa$ > t) abs -))
 
 (define (loop-mod$ max) (^x (cond [(<= max x) (fmod x max)]
 				  [(> 0 x) (fmod (+ x max) max)]

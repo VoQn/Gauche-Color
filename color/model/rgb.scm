@@ -13,7 +13,7 @@
 
 ;; Utility Method & Functions
 (define float->hex-string
-  (.$ (fif (.$ (pa$ > 2) string-length)
+  (.$ (if$ (.$ (pa$ > 2) string-length)
 	   (pa$ format "0~a")
 	   identity)
       (cut number->string <> 16)

@@ -7,13 +7,13 @@
 (use util)
 (test-module 'util)
 
-(test-section "Utility Functions: tolerance")
+(test-section "Utility Functions: tolerance$")
 (test* "case |x - y| < t" #t
-       ((tolerance 1e-5) (/ 1 3) 0.33333333))
+       ((tolerance$ 1e-5) (/ 1 3) 0.33333333))
 (test* "case |x - y| = t" #f
-       ((tolerance 1e-5) 0 1e-5))
+       ((tolerance$ 1e-5) 0 1e-5))
 (test* "case |x - y| > t" #f
-       ((tolerance 1e-5) 0 1e-4))
+       ((tolerance$ 1e-5) 0 1e-4))
 
 (test-section "Utility Functions: loop-mod$")
 (test* "case x < 0"         10 ((loop-mod$ 360) -350) =)
@@ -31,24 +31,24 @@
 (test* "<string>" '(#\t #\e #\s #\t) (x->list "test"))
 (test* "<vector>" '(1 2 3) (x->list '#(1 2 3)))
 
-(test-section "Utility Macro: fif")
+(test-section "Utility Macro: if$")
 (test* "generate if-syntax : then case"
        "argument is odd! : 3"
-       ((fif odd?
+       ((if$ odd?
 	     (^x #`"argument is odd! : ,x")
 	     (^x #`"argument is even! : ,x"))
 	3))
 
 (test* "generate if-syntax : else case"
        "argument is even! : 4"
-       ((fif odd?
+       ((if$ odd?
 	     (^x #`"argument is odd! : ,x")
 	     (^x #`"argument is even! : ,x"))
 	4))
 
 (test* "generate if-syntax : without else"
        (undefined)
-       ((fif odd?
+       ((if$ odd?
 	     (^x #`"argument is odd! : ,x"))
 	4))
 

@@ -10,7 +10,7 @@
 (test-module 'color.model.rgb)
 
 ;; testing each value between expect and result float list
-(define enough? (tolerance 1e-5))
+(define enough? (tolerance$ 1e-5))
 
 ;;; RGB Color Space Model
 (test-section "RGB Color Model")
