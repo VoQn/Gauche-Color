@@ -9,7 +9,7 @@
 ;;; Hue Chroma X Model
  
 (define-class* <hcx> (<color>)
-  ((hue    :is-a <real> :filter (loop-mod$ 360))
+  ((hue    :is-a <real> :filter (loop-mod$ 6))
    (chroma :is-a <real> :filter (inner$ 0 1))
    (x      :is-a <real> :filter (inner$ 0 1))))
 

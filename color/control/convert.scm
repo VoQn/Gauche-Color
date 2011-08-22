@@ -1,8 +1,8 @@
 #!/usr/bin/env gosh
 
 (define-module color.control.convert
+  (use srfi-11)
   (use util)
-  (use gauche.experimental.app)
   (extend color.model.hcx
 	  color.model.rgb
 	  color.model.hsl
@@ -10,7 +10,9 @@
   (export x->rgb
 	  x->rgba
 	  rgb->hsl
-	  rgba->hsla))
+	  rgba->hsla
+	  rgb->hsv
+	  rgba->hsva))
 
 (select-module color.control.convert)
 
@@ -18,62 +20,59 @@
 
 ;; HCX -> RGB
 (define-method hcx->rgb ((hcx <hcx>))
-  (receive (_h c x) (x->values hcx)
-    (receive (r g b)
-	(let1 h ($ x->integer $ floor _h)
-	  ($* values $ case h
-		       [(0)  (list c x 0)]
-		       [(1)  (list x c 0)]
-		       [(2)  (list 0 c x)]
-		       [(3)  (list 0 x c)]
-		       [(4)  (list x 0 c)]
-		       [(5)  (list c 0 x)]
-		       [else (list 0 0 0)]))
-      (make <rgb> :red r :green g :blue b))))
+  (let*-values ([(_h c x) (x->values hcx)]
+		[(r g b) (let1 h (x->integer (floor _h))
+			   (case h
+			       [(0)  (values c x 0)]
+			       [(1)  (values x c 0)]
+			       [(2)  (values 0 c x)]
+			       [(3)  (values 0 x c)]
+			       [(4)  (values x 0 c)]
+			       [(5)  (values c 0 x)]
+			       [else (values 0 0 0)]))])
+    (make <rgb> :red r :green g :blue b)))
 
-
-;; HSL -> RGB
-(define-method hsl->rgb ((hsl <hsl>))
+;; HSL -> HCX
+(define-method hsl->hcx ((hsl <hsl>))
   (receive (_h s l) (x->values hsl)
     (let* ([h   (/. _h 60)]
 	   [c   (* s (- 1 (abs (- (* l 2) 1))))]
-	   [x   (* c (- 1 (abs (- (fmod h 2) 1))))]
-	   [m   (- l (/ c 2))]
-	   [rgb (hcx->rgb (make <hcx> :hue h :chroma c :x x))])
-      (+bright rgb m))))
+	   [x   (* c (- 1 (abs (- (fmod h 2) 1))))])
+      (make <hcx> :hue h :chroma c :x x))))
 
-;; HSLA -> RGBA
-(define-method hsla->rgba ((hsla <hsla>))
-  (receive (_ _ _ a) (x->values hsla)
-    (let1 hsl (remove-alpha hsla)
-      (add-alpha (hsl->rgb hsl) a))))
+(define-method x->hcx ((hsl <hsl>)) (hsl->hcx hsl))
 
+;; HSL -> RGB
+(define-method hsl->rgb ((hsl <hsl>))
+  (receive (_ s l) (x->values hsl)
+    (let* ([c   (* s (- 1 (abs (- (* l 2) 1))))]
+	   [m   (- l (/ c 2))])
+      (+bright (hcx->rgb (hsl->hcx hsl))
+	       m))))
+
+;; XA -> Y (convert without alpha-channel)
+(define (convert-without-alpha obj conv)
+  (conv (remove-alpha obj)))
+
+;; XA -> YA (convert with alpha-channel)
+(define (convert/alpha obj conv)
+  (add-alpha (conv (remove-alpha obj))
+	     (alpha-of obj)))
+
+;; HSV -> HCX
+(define-method hsv->hcx ((hsv <hsv>))
+  (receive (_h s v) (x->values hsv)
+    (let* ([h (/. _h 60)]
+	   [c (* v s)]
+	   [x (* c (- 1 (abs (- (fmod h 2) 1))))])
+      (make <hcx> :hue h :chroma c :x x))))
 
 ;; HSV -> RGB
 (define-method hsv->rgb ((hsv <hsv>))
-  (receive (_h s v) (x->values hsv)
-    (receive (r g b)
-	(apply values
-	       (if (zero? s) (list v v v)
-		   (let* ([h (x->integer (floor (/. _h 60)))]
-			  [f (- (/. _h 60) h)]
-			  [m (* v (- 1 s))]
-			  [n (* v (- 1 (* s f)))]
-			  [k (* v (- 1 (* s (- 1 f))))])
-		     (case h
-		       [(0) (list v k m)]
-		       [(1) (list n v m)]
-		       [(2) (list m v k)]
-		       [(3) (list m n v)]
-		       [(4) (list k m v)]
-		       [(5) (list v m n)]))))
-      (make <rgb> :red r :green g :blue b))))
-
-;; HSVA -> RGBA
-(define-method hsva->rgba ((hsva <hsva>))
-  (receive (_ _ _ a) (x->values hsva)
-    (let1 hsv (remove-alpha hsva)
-      (add-alpha (hsv->rgb hsv) a))))
+  (receive (_ s v) (x->values hsv)
+    (let* ([c (* v s)]
+	   [m (- v c)])
+      (+bright (hcx->rgb (hsv->hcx hsv)) m))))
 
 ;; RGB -> HSL
 (define-method rgb->hsl ((rgb <rgb>))
@@ -90,16 +89,32 @@
       (make <hsl> :hue h :saturation s :luminance l))))
 
 ;; RGBA -> HSL
-(define-method rgba->hsla ((rgba <rgba>))
-  (receive (_ _ _ a) (x->values rgba)
-    (let1 rgb (remove-alpha rgba)
-      (add-alpha (rgb->hsl rgb) a))))
+(define-method rgba->hsla ((rgba <rgba>)) (convert/alpha rgba rgb->hsl))
+
+;; RGB -> HSV
+(define-method rgb->hsv ((rgb <rgb>))
+  (receive (r g b) (x->values rgb)
+    (let* ([max-val (max r g b)]
+	   [min-val (min r g b)]
+	   [c (- max-val min-val)]
+	   [v max-val]
+	   [s (if (zero? max-val) 0 (/. c v))]
+	   [h (* 60 (cond [(zero? s) 0]
+			  [(= max-val r) (/. (- g b) c)]
+			  [(= max-val g) (/. (- b r) c)]
+			  [(= max-val b) (/. (- r g) c)]))])
+      (make <hsv> :hue h :saturation s :value v))))
+
+(define-method rgba->hsva ((rgba <rgba>)) (convert/alpha rgba rgb->hsl))
 
 (define-method x->rgb ((hcx <hcx>)) (hcx->rgb hcx))
 (define-method x->rgb ((hsl <hsl>)) (hsl->rgb hsl))
 (define-method x->rgb ((hsv <hsv>)) (hsv->rgb hsv))
-(define-method x->rgba ((hsla <hsla>)) (hsla->rgba hsla))
-(define-method x->rgba ((hsva <hsva>)) (hsva->rgba hsva))
+(define-method x->rgb ((rgba <rgba>)) (remove-alpha rgba))
+(define-method x->rgb ((hsla <hsla>)) (convert-without-alpha hsla hsl->rgb))
+(define-method x->rgb ((hsva <hsva>)) (convert-without-alpha hsva hsv->rgb))
+(define-method x->rgba ((hsla <hsla>)) (convert/alpha hsla x->rgb))
+(define-method x->rgba ((hsva <hsva>)) (convert/alpha hsva x->rgb))
 
 (provide "color/control/convert")
 ;; EOF

@@ -9,9 +9,6 @@
 (use color.control.convert)
 (test-module 'color.control.convert)
 
-;; testing each value between expect and result float list
-(define enough? (tolerance$ 1e-5))
-
 ;;; Convert
 (test-section "HCX -> RGB")
 (test-type* "convert type" <rgb> (x->rgb (make <hcx>)))

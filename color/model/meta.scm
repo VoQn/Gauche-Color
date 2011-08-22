@@ -29,6 +29,13 @@
   (map (pa$ slot-ref obj) (slots obj)))
 
 ;; Method Interface
+(define-method hue-of ((color <color>)) (error "Not Support"))
+(define-method hue-set! ((color <color>)) (error "Not Support"))
+(define-method saturation-of ((color <color>)) (error "Not Support"))
+(define-method saturation-set! ((color <color>)) (error "Not Support"))
+(define-method alpha-of ((color <color>)) (error "Not Support"))
+(define-method alpha-set! ((color <color>)) (error "Not Support"))
+
 (define-method add-alpha ((color <color>) (alpha <real>)) color)
 (define-method remove-alpha ((color <color>)) color)
 
