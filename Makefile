@@ -16,5 +16,6 @@ check:
 	${test}/model/hsv-test.scm       >> ${log}
 	${test}/model/hsl-test.scm       >> ${log}
 	${test}/control/convert-test.scm >> ${log}
+	${test}/control/harmonics-test.scm >> ${log}
 	@echo "------------------------------------------------------------------------"
 	@cat ${record}

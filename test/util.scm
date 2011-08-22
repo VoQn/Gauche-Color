@@ -20,5 +20,8 @@
      (test* name exp ((if$ pair? identity x->list) expr)
 	    (pa$ list= test))]))
 
+;; testing each value between expect and result float list
+(define enough? (tolerance$ 1e-5))
+
 (provide "test/util")
 ;; EOF

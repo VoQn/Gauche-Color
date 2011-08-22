@@ -76,9 +76,11 @@
 
 (define (tolerance$ t) (.$ (pa$ > t) abs -))
 
-(define (loop-mod$ max) (^x (cond [(<= max x) (fmod x max)]
-				  [(> 0 x) (fmod (+ x max) max)]
-				  [else x])))
+(define (loop-mod$ max) 
+  (^x ((^v (if (= v (floor v)) (x->integer v) v))
+       (cond [(<= max x) (fmod x max)]
+	     [(> 0 x) (fmod (+ x max) max)]
+	     [else x]))))
 
 (define (inner$ min max) (cut clamp min <> max))
 
