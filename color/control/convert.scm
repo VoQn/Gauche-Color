@@ -1,4 +1,5 @@
 #!/usr/bin/env gosh
+;; -*- mode: gauche; coding: utf-8; -*-
 
 (define-module color.control.convert
   (use srfi-11)
@@ -39,8 +40,6 @@
 	   [c   (* s (- 1 (abs (- (* l 2) 1))))]
 	   [x   (* c (- 1 (abs (- (fmod h 2) 1))))])
       (make <hcx> :hue h :chroma c :x x))))
-
-(define-method x->hcx ((hsl <hsl>)) (hsl->hcx hsl))
 
 ;; HSL -> RGB
 (define-method hsl->rgb ((hsl <hsl>))
