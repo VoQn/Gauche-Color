@@ -7,62 +7,94 @@
   (use color.model.hsl)
   (use color.model.hsv)
   (use color.control.convert)
-  (export-all))
+  (export tone-in-tone
+	  dyads
+	  split-complementary
+	  triad))
 
 (select-module color.control.harmonics)
 
-;; basic storategy for tone in tone
-(define (make-tone-in-tone o m n r)
-  (let ([h (hue-of o)]
-	[dh (* r (floor (/ n 2)))])
-    (cond [(< n 1) '()]
-	  [(= n 1) (list o)]
-	  [else `(,(m (- h dh))
-		  ,@(make-tone-in-tone o m (- n 2) r)
-		  ,(m (+ h dh)))])))
+;; make instance function need only hue
+(define-method make-from-hue ((origin <hsl>))
+  (receive (_ s l) (x->values origin)
+    (cut make <hsl> :hue <> :saturation s :luminance l)))
+
+(define-method make-from-hue ((origin <hsv>))
+  (receive (_ s v) (x->values origin)
+    (cut make <hsv> :hue <> :saturation s :value v)))
+
+;; basic strategy for tone in tone
+;; X -> [X]
+(define (make-tone-in-tone origin num range)
+  (let ([maker (make-from-hue origin)]
+	[hue (hue-of origin)]
+	[dh (* range (floor (/ num 2)))])
+    (cond [(< num 1) '()]
+	  [(= num 1) (list origin)]
+	  [else `(,(maker (- hue dh))
+		  ,@(make-tone-in-tone origin (- num 2) range)
+		  ,(maker (+ hue dh)))])))
 
 (define-method tone-in-tone ((base <hsl>) (num <integer>) (range <real>))
-  (receive (_ s l) (x->values base)
-    (let1 make-hsl (cut make <hsl> :hue <> :saturation s :luminance l)
-      (make-tone-in-tone base make-hsl num range))))
+  (make-tone-in-tone base num range))
 
 (define-method tone-in-tone ((base <hsv>) (num <integer>) (range <real>))
-  (receive (_ s v) (x->values base)
-    (let1 make-hsv (cut make <hsv> :hue <> :saturation s :value v)
-      (make-tone-in-tone base make-hsv num range))))
+  (make-tone-in-tone base num range))
 
-(define (hue-contrast color-has-hue make-proc split-count . opt-range)
-  (let1 range (get-optional opt-range (/ 360 split-count))
-    (let iter ([result '()]
-	       [hue (hue-of color-has-hue)]
-	       [dh range]
+;; basic hue-contrast harmony factory function
+;; X -> [X]
+(define (hue-contrast origin split-count)
+  (let ([maker (make-from-hue origin)]
+	[dh (/. 360 split-count)])
+    (let iter ([result (list origin)]
+	       [hue (hue-of origin)]
 	       [count split-count])
-      (cond [(< count 1) result]
-	    [(= count 1) color-has-hue]
-	    [else (iter (cons (make-proc (+ hue dh)) result)
+      (cond [(< count 1) '()]
+	    [(= count 1) result]
+	    [else (iter (cons (maker (+ hue dh)) result)
 			(+ hue dh)
-			dh
 			(- count 1))]))))
-	       
+  
+
 (define-method dyads ((base <hsl>)) (hue-contrast base 2))
 (define-method dyads ((base <hsv>)) (hue-contrast base 2))
 (define-method triad ((base <hsl>)) (hue-contrast base 3))
 (define-method triad ((base <hsv>)) (hue-contrast base 3))
 
-(define (make-tone/alpha obj proc . needs)
-  (let1 a (alpha-of obj)
-    (map (cut add-alpha <> a)
-	 (apply proc (remove-alpha obj) needs))))
+(define-method split-complementary ((base <hsl>))
+  (let1 compl (car (dyads base))
+    (cons base (tone-in-tone compl 2 15))))
+
+(define-method split-complementary ((base <hsv>))
+  (let1 compl (car (dyads base))
+    (cons base (tone-in-tone compl 2 15))))
+
+;; XA -> [XA]
+(define (make-tone/alpha proc origin . needs)
+  (let ([without-alpha-object (remove-alpha origin)]
+	[alpha (alpha-of origin)])
+    (map (cut add-alpha <> alpha)
+	 (apply proc without-alpha-object needs))))
 
 (define-method tone-in-tone ((base <hsla>) (num <integer>) (range <real>))
-  (make-tone/alpha base tone-in-tone num range))
+  (make-tone/alpha tone-in-tone base num range))
 
 (define-method tone-in-tone ((base <hsva>) (num <integer>) (range <real>))
-  (make-tone/alpha base tone-in-tone num range))
+  (make-tone/alpha tone-in-tone base num range))
 
-(define-method dyads ((base <hsla>)) (hue-contrast base 2))
-(define-method dyads ((base <hsva>)) (hue-contrast base 2))
-(define-method triad ((base <hsla>)) (hue-contrast base 3))
-(define-method triad ((base <hsva>)) (hue-contrast base 3))
+(define-method dyads ((base <hsla>))
+ (make-tone/alpha dyads base))
+
+(define-method dyads ((base <hsva>))
+ (make-tone/alpha dyads base))
+
+(define-method split-complementary ((base <hsla>))
+ (make-tone/alpha split-complementary base))
+
+(define-method split-complementary ((base <hsva>))
+ (make-tone/alpha split-complementary base))
+
+(define-method triad ((base <hsla>)) (make-tone/alpha triad base))
+(define-method triad ((base <hsva>)) (make-tone/alpha triad base))
 
 (provide "color/control/harmonics")
