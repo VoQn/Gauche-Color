@@ -4,10 +4,7 @@
 (define-module color.control.convert
   (use srfi-11)
   (use util)
-  (extend color.model.hcx
-	  color.model.rgb
-	  color.model.hsl
-	  color.model.hsv)
+  (use color.model)
   (export x->rgb
 	  x->rgba
 	  rgb->hsl

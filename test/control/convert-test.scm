@@ -6,6 +6,7 @@
 
 (test-start "color.control.convert")
 
+(use color.model)
 (use color.control.convert)
 (test-module 'color.control.convert)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env gosh
+;; -*- mode: gauche; coding: utf-8; -*-
 
 (define-module util
   (export-all))
@@ -8,29 +9,26 @@
 
 (define-macro (define-class* name supers slots . options)
   `(define-class ,name ,supers
-     ,(map (^s (let* ([has? (^ (key list) (get-keyword key list #f))]
-		      [key (car s)]
-		      [init-key (make-keyword key)]
-		      [accessor (^a (string->symbol #`",|key|-,|a|"))]
-		      [reader (accessor 'of)]
-		      [writer (accessor 'set!)]
-		      [rest (cdr s)])
-		 `(,key
-		   ,@(if (has? :init-value rest) '()
-			 (list :init-value (make-init-value rest)))
-		   ,@(if (has? :init-keyword rest) '()
-			 (list :init-keyword init-key))
-		   ,@(if (has? :getter rest) '()
-			 (list :getter reader))
-		   ,@(if (or (has? :setter rest)
-			     (has? :read-only rest)) '()
-			 (list :setter writer))
-		   ,@rest)))
+     ,(map (^s (let ([has? (cut get-keyword <> <> #f)]
+		     [key (car s)]
+		     [accessor (^ (k a) (string->symbol #`",|k|-,|a|"))]
+		     [rest (cdr s)])
+		 (let1 compl (^ (k i)
+			       (if (has? k rest) '()
+				   (list k i)))
+		   `(,key
+		     ,@(compl :init-value (make-init-value rest))
+		     ,@(compl :init-keyword (make-keyword key))
+		     ,@(compl :getter (accessor key 'of))
+		     ,@(if (or (has? :setter rest)
+			       (has? :read-only rest)) '()
+			       (list :setter (accessor key 'set!)))
+		     ,@rest))))
 	   slots)
      ,@options))
 
 (define (make-init-value key-list)
-  (let1 has? (^k (get-keyword k key-list #f))
+  (let1 has? (cut get-keyword <> key-list #f)
     (if-let1 t
 	     (has? :is-a)
 	     (case t
@@ -46,17 +44,17 @@
 (define-class <type-safe-meta> (<class>) (()))
 
 (define-method compute-get-n-set ((class <type-safe-meta>) slot)
-  (let* ([has? (^ (option) (slot-definition-option slot option #f))]
+  (let* ([has? (cut slot-definition-option slot <> #f)]
 	 [acc (compute-slot-accessor class slot (next-method))]
 	 [type-error
-	  (^ (type value)
+	  (^ (value type)
 	     (error
 	      #`"Type Error : require type ,|type| but ,(class-of value)"
 	      value))]
 	 [validate-type
 	  (^v (if-let1 t (has? :is-a)
-		       (if (is-a? v t) v (type-error t v))
-		       v))]
+		(if (is-a? v t) v (type-error v t))
+		v))]
 	 [validate-value
 	  (^v (if-let1 validate (has? :validate) (validate v) v))]
 	 [filter-value

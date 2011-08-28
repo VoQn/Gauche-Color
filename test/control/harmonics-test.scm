@@ -7,8 +7,7 @@
 
 (test-start "color.control.harmonics")
 
-(use color.model.hsl)
-(use color.model.hsv)
+(use color.model)
 (use color.control.harmonics)
 (test-module 'color.control.harmonics)
 
