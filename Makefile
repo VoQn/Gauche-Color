@@ -8,7 +8,8 @@ test = @gosh -I. -l ${bootstrap} ${test-dir}
 
 check:
 	@echo "Cleaning log file ..."
-	@rm -f ${record} ${log}
+	@rm -rf ${test-temp}
+	@mkdir ${test-temp}
 	@echo "------------------------------------------------------------------------"
 	${test}/util-test.scm		 >> ${log}
 	${test}/model/hcx-test.scm       >> ${log}
