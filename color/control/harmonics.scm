@@ -10,7 +10,10 @@
   (export tone-in-tone
 	  dyads
 	  split-complementary
-	  triad))
+	  triad
+	  tetrad
+	  pentads
+	  hexads))
 
 (select-module color.control.harmonics)
 
@@ -58,8 +61,21 @@
 
 (define-method dyads ((base <hsl>)) (hue-contrast base 2))
 (define-method dyads ((base <hsv>)) (hue-contrast base 2))
+
 (define-method triad ((base <hsl>)) (hue-contrast base 3))
 (define-method triad ((base <hsv>)) (hue-contrast base 3))
+
+(define-method tetrad ((base <hsl>)) (hue-contrast base 4))
+(define-method tetrad ((base <hsv>)) (hue-contrast base 4))
+
+(define-method tetrad ((base <hsl>)) (hue-contrast base 4))
+(define-method tetrad ((base <hsv>)) (hue-contrast base 4))
+
+(define-method pentads ((base <hsl>)) (hue-contrast base 5))
+(define-method pentads ((base <hsv>)) (hue-contrast base 5))
+
+(define-method hexads ((base <hsl>)) (hue-contrast base 6))
+(define-method hexads ((base <hsv>)) (hue-contrast base 6))
 
 (define-method split-complementary ((base <hsl>))
   (let1 compl (car (dyads base))
@@ -82,11 +98,8 @@
 (define-method tone-in-tone ((base <hsva>) (num <integer>) (range <real>))
   (make-tone/alpha tone-in-tone base num range))
 
-(define-method dyads ((base <hsla>))
- (make-tone/alpha dyads base))
-
-(define-method dyads ((base <hsva>))
- (make-tone/alpha dyads base))
+(define-method dyads ((base <hsla>)) (make-tone/alpha dyads base))
+(define-method dyads ((base <hsva>)) (make-tone/alpha dyads base))
 
 (define-method split-complementary ((base <hsla>))
  (make-tone/alpha split-complementary base))
@@ -97,4 +110,14 @@
 (define-method triad ((base <hsla>)) (make-tone/alpha triad base))
 (define-method triad ((base <hsva>)) (make-tone/alpha triad base))
 
+(define-method tetrad ((base <hsla>)) (make-tone/alpha tetrad base))
+(define-method tetrad ((base <hsva>)) (make-tone/alpha tetrad base))
+
+(define-method pentads ((base <hsla>)) (make-tone/alpha pentads base))
+(define-method pentads ((base <hsva>)) (make-tone/alpha pentads base))
+
+(define-method hexads ((base <hsla>)) (make-tone/alpha hexads base))
+(define-method hexads ((base <hsva>)) (make-tone/alpha hexads base))
+
 (provide "color/control/harmonics")
+;; EOF
