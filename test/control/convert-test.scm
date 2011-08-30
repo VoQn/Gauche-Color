@@ -173,5 +173,14 @@
 (test-list* "case each equal value (0.5 0.5 0.5 1.0)" '(0 0 0.5 1.0)
 	    (rgba->hsla (+bright (make <rgba> :alpha 1.0) 0.5)) enough?)
 
+(test-list* "case max value is red" '(350 1 0.7 1)
+	    (rgba->hsla (make <rgba> :red 1.0 :green 0.4 :blue 0.5 :alpha 1)) enough?)
+
+(test-list* "case max value is green" '(130 1 0.7 1)
+	    (rgba->hsla (make <rgba> :red 0.4 :green 1.0 :blue 0.5 :alpha 1)) enough?)
+
+(test-list* "case max value is blue" '(250 1 0.7 1)
+	    (rgba->hsla (make <rgba> :red 0.5 :green 0.4 :blue 1.0 :alpha 1)) enough?)
+
 (test-end)
 ;; EOF

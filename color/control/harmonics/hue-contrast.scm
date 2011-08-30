@@ -2,7 +2,6 @@
 ;; -*- mode: gauche; coding: utf-8; -*-
 
 (define-module color.control.harmonics.hue-contrast
-  (use gauche.experimental.app)
   (use util)
   (use color.model)
   (use color.control.convert)
@@ -21,34 +20,50 @@
   (receive (_ s l) (x->values origin)
     (cut make <hsl> :hue <> :saturation s :luminance l)))
 
+(define-method make-from-hue ((origin <hsla>))
+  (receive (_ s l a) (x->values origin)
+    (cut make <hsla> :hue <> :saturation s :luminance l :alpha a)))
+
 (define-method make-from-hue ((origin <hsv>))
   (receive (_ s v) (x->values origin)
     (cut make <hsv> :hue <> :saturation s :value v)))
 
+(define-method make-from-hue ((origin <hsva>))
+  (receive (_ s v a) (x->values origin)
+    (cut make <hsva> :hue <> :saturation s :value v :alpha a)))
+
+(define-method make-from-hue ((origin <rgb>))
+  (receive (_ s l) (x->values (rgb->hsl origin))
+    (^h (x->rgb (make <hsl> :hue h :saturation s :luminance l)))))
+
+(define-method make-from-hue ((origin <rgba>))
+  (receive (_ s l a) (x->values (rgba->hsla origin))
+    (^h (x->rgba (make <hsla> :hue h :saturation s :luminance l :alpha a)))))
+
+(define-method hue-of ((rgb <rgb>))
+  (hue-of (rgb->hsl rgb)))
+
+(define-method hue-of ((rgba <rgba>))
+  (hue-of (rgba->hsla rgba)))
+
 ;; basic strategy for tone in tone
-;; X -> [X]
+;; Integer -> Float -> Color -> [Color]
 (define (make-tone-in-tone origin num range)
   (let ([maker (make-from-hue origin)]
-	[hue (hue-of origin)]
-	[dh (* range (floor (/ num 2)))])
-    (cond [(< num 1) '()]
-	  [(= num 1) (list origin)]
-	  [else `(,(maker (- hue dh))
-		  ,@(make-tone-in-tone origin (- num 2) range)
-		  ,(maker (+ hue dh)))])))
+	[hue (hue-of origin)])
+    (let iter ([count num])
+      (let1 dh (* range (floor (/ count 2)))
+	(cond [(< count 1) '()]
+	      [(= count 1) (list origin)]
+	      [else `(,(maker (- hue dh))
+		      ,@(iter (- count 2))
+		      ,(maker (+ hue dh)))])))))
 
-(define-method tone-in-tone ((base <hsl>) (num <integer>) (range <real>))
+(define-method tone-in-tone ((base <color>) (num <integer>) (range <real>))
   (make-tone-in-tone base num range))
-
-(define-method tone-in-tone ((base <hsv>) (num <integer>) (range <real>))
-  (make-tone-in-tone base num range))
-
-(define-method tone-in-tone ((base <rgb>) (num <integer>) (range <real>))
-  (map x->rgb
-       (make-tone-in-tone (rgb->hsv base) num range)))
 
 ;; basic hue-contrast harmony factory function
-;; X -> [X]
+;; Int -> Color -> [Color]
 (define (hue-contrast origin split-count)
   (let ([maker (make-from-hue origin)]
 	[dh (/. 360 split-count)])
@@ -60,70 +75,17 @@
 	    [else (iter (cons (maker (+ hue dh)) result)
 			(+ hue dh)
 			(- count 1))]))))
-  
 
-(define-method dyads ((base <hsl>)) (hue-contrast base 2))
-(define-method dyads ((base <hsv>)) (hue-contrast base 2))
+(define-method dyads   ((base <color>)) (hue-contrast base 2))
+(define-method triad   ((base <color>)) (hue-contrast base 3))
+(define-method tetrad  ((base <color>)) (hue-contrast base 4))
+(define-method pentads ((base <color>)) (hue-contrast base 5))
+(define-method hexads  ((base <color>)) (hue-contrast base 6))
 
-(define-method triad ((base <hsl>)) (hue-contrast base 3))
-(define-method triad ((base <hsv>)) (hue-contrast base 3))
+(define (make-split-compl o)
+  (let1 compl (car (dyads o)) (cons o (tone-in-tone compl 2 15))))
 
-(define-method tetrad ((base <hsl>)) (hue-contrast base 4))
-(define-method tetrad ((base <hsv>)) (hue-contrast base 4))
-
-(define-method tetrad ((base <hsl>)) (hue-contrast base 4))
-(define-method tetrad ((base <hsv>)) (hue-contrast base 4))
-
-(define-method pentads ((base <hsl>)) (hue-contrast base 5))
-(define-method pentads ((base <hsv>)) (hue-contrast base 5))
-
-(define-method hexads ((base <hsl>)) (hue-contrast base 6))
-(define-method hexads ((base <hsv>)) (hue-contrast base 6))
-
-(define-method split-complementary ((base <hsl>))
-  (let1 compl (car (dyads base))
-    (cons base (tone-in-tone compl 2 15))))
-
-(define-method split-complementary ((base <hsv>))
-  (let1 compl (car (dyads base))
-    (cons base (tone-in-tone compl 2 15))))
-
-;; XA -> [XA]
-(define (make-tone/alpha proc origin . needs)
-  (let ([without-alpha-object (remove-alpha origin)]
-	[alpha (alpha-of origin)])
-    (map (cut add-alpha <> alpha)
-	 (apply proc without-alpha-object needs))))
-
-(define-method tone-in-tone ((base <hsla>) (num <integer>) (range <real>))
-  (make-tone/alpha tone-in-tone base num range))
-
-(define-method tone-in-tone ((base <hsva>) (num <integer>) (range <real>))
-  (make-tone/alpha tone-in-tone base num range))
-
-(define-method tone-in-tone ((base <rgba>) (num <integer>) (range <real>))
-  (make-tone/alpha tone-in-tone base num range))
-
-(define-method dyads ((base <hsla>)) (make-tone/alpha dyads base))
-(define-method dyads ((base <hsva>)) (make-tone/alpha dyads base))
-
-(define-method split-complementary ((base <hsla>))
- (make-tone/alpha split-complementary base))
-
-(define-method split-complementary ((base <hsva>))
- (make-tone/alpha split-complementary base))
-
-(define-method triad ((base <hsla>)) (make-tone/alpha triad base))
-(define-method triad ((base <hsva>)) (make-tone/alpha triad base))
-
-(define-method tetrad ((base <hsla>)) (make-tone/alpha tetrad base))
-(define-method tetrad ((base <hsva>)) (make-tone/alpha tetrad base))
-
-(define-method pentads ((base <hsla>)) (make-tone/alpha pentads base))
-(define-method pentads ((base <hsva>)) (make-tone/alpha pentads base))
-
-(define-method hexads ((base <hsla>)) (make-tone/alpha hexads base))
-(define-method hexads ((base <hsva>)) (make-tone/alpha hexads base))
+(define-method split-complementary ((base <color>)) (make-split-compl base))
 
 (provide "color/control/harmonics/hue-contrast")
 ;; EOF
