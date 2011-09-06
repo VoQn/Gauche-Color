@@ -1,18 +1,21 @@
 #!/usr/bin/env gosh
+;; -*- mode: gauche; coding: utf-8; -*-
 
 (define-module color.model.rgb
   (use util)
-  (use gauche.experimental.app)
+  (use srfi-11)
   (extend color.model.meta)
   (export <rgb>
 	  <rgba>
 	  hex-expr
-	  +bright))
+	  +bright
+	  hsl-params
+	  hsv-params))
 
 (select-module color.model.rgb)
 
 ;; Utility Method & Functions
-(define float->hex-string
+(define real->hex-string 
   (.$ (if$ (.$ (pa$ > 2) string-length)
 	   (pa$ format "0~a")
 	   identity)
@@ -22,7 +25,10 @@
       (pa$ * 255)))
 
 (define (m-values proc color)
-  (apply values (map proc (x->list color))))
+  ((.$ (pa$ apply values)
+       (map$ proc)
+       x->list)
+   color))
 
 ;;; Red Green Blue Model
 (define-class* <rgb> (<color>)
@@ -36,7 +42,7 @@
 
 (define-method hex-expr ((rgb <rgb>))
   ((.$ (fold$ (^ (x r) #`",r,x") "#")
-       (map$ float->hex-string)
+       (map$ real->hex-string)
        x->list)
    rgb))
 
@@ -67,6 +73,48 @@
 (define-method remove-alpha ((rgba <rgba>))
   (receive (r g b _) (x->values rgba)
     (make <rgb> :red r :green g :blue b)))
+
+;; Hue
+(define (hue r g b . _)
+  (let* ([max-val (max r g b)]
+	 [min-val (min r g b)]
+	 [c (- max-val min-val)])
+    (* 60 (cond [(zero? c) 0]
+		[(= max-val r) (fmod (/. (- g b) c) 6)]
+		[(= max-val g) (+ (/. (- b r) c) 2)]
+		[(= max-val b) (+ (/. (- r g) c) 4)]))))
+
+;; 
+(define (hsl-values r g b . _)
+  (let* ([max-val (max r g b)]
+	 [min-val (min r g b)]
+	 [c (- max-val min-val)]
+	 [l (/ (+ max-val min-val) 2)]
+	 [s (if (zero? c) 0 (/ c (- 1 (abs (- (* 2 l) 1)))))]
+	 [h (hue r g b)])
+    (values h s l)))
+
+;;
+(define (hsv-values r g b . _)
+  (let* ([max-val (max r g b)]
+	 [min-val (min r g b)]
+	 [c (- max-val min-val)]
+	 [v max-val]
+	 [s (if (zero? max-val) 0 (/. c v))]
+	 [h (hue r g b)])
+    (values h s v)))
+
+;; Hue
+(define-method hue-of ((rgb <rgb>))
+  (apply hue (x->list rgb)))
+
+;; HSL-Parameter
+(define-method hsl-params ((rgb <rgb>))
+  (apply hsl-values (x->list rgb)))
+
+;; HSV-Parameter
+(define-method hsv-params ((rgb <rgb>))
+  (apply hsv-values (x->list rgb)))
 
 (provide "color/model/rgb")
 ;; EOF

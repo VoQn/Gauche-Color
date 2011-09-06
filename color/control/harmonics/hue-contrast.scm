@@ -40,11 +40,6 @@
   (receive (_ s l a) (x->values (rgba->hsla origin))
     (^h (x->rgba (make <hsla> :hue h :saturation s :luminance l :alpha a)))))
 
-(define-method hue-of ((rgb <rgb>))
-  (hue-of (rgb->hsl rgb)))
-
-(define-method hue-of ((rgba <rgba>))
-  (hue-of (rgba->hsla rgba)))
 
 ;; basic strategy for tone in tone
 ;; Integer -> Float -> Color -> [Color]
