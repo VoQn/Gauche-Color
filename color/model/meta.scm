@@ -15,7 +15,7 @@
       (^k (fold-right
 		(^ (x r) (if (null? (car x)) r (cons (car x) r)))
 		'()
-		(ref (class-of obj) k)))
+		(~ (class-of obj) k)))
     (let ([slots (make-slot-name-list 'slots)]
 	  [direct-slots (make-slot-name-list 'direct-slots)])
       (receive
